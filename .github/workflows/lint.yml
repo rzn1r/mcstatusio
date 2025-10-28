@@ -1,4 +1,4 @@
-name: Lint
+name: Ruff Lint
 
 on: [push]
 
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.11", "3.12"]
 
     steps:
       - name: Checkout repository
@@ -22,11 +22,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install uv
-        run: pip install uv
-
-      - name: Sync dependencies
-        run: uv sync --frozen
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
 
       - name: Lint code with Ruff
-        run: uv tool ruff check .
+        run: ruff check .

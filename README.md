@@ -1,6 +1,12 @@
 # MCStatusio
 [![Tests](https://github.com/rzn1r/mcstatusio/actions/workflows/test.yml/badge.svg)](https://github.com/rzn1r/mcstatusio/actions/workflows/test.yml)
 
+[![Lint](https://github.com/rzn1r/mcstatusio/actions/workflows/lint.yml/badge.svg)](https://github.com/rzn1r/mcstatusio/actions/workflows/lint.yml)
+
+![PyPI - Version](https://img.shields.io/pypi/v/mcstatusio)
+
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcstatusio)
+
 A Python wrapper for [mcstatus](httos://mcstatus.io/) API. 
 
 ## Installation

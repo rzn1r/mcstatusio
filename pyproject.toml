@@ -1,0 +1,21 @@
+[project]
+name = "mcstatusio"
+version = "0.1.0"
+description = "A Python wrapper for the mcstatus.io API."
+readme = "README.md"
+authors = [
+    { name = "Rezn1r", email = "rezn1r@proton.me" },
+]
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.13.1",
+    "requests>=2.32.5",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.9.0",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+]

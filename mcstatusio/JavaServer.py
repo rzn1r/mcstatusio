@@ -1,0 +1,264 @@
+"""
+Java Edition Minecraft server status client.
+
+This module provides a client for querying the status of Java Edition Minecraft
+servers using the mcstatus.io API. It supports both synchronous and asynchronous
+requests.
+"""
+
+import requests
+import aiohttp
+from dataclasses import dataclass
+from typing import Optional
+from .constants import (
+    BASE_URL,
+    DEFAULT_TIMEOUT,
+    JavaPlayers,
+    StatusResponse,
+    JavaServerStatusOffline,
+    JavaVersion,
+    MOTD,
+    JavaMods,
+    JavaPlugins,
+    JavaSRV,
+)
+
+
+@dataclass(frozen=True)
+class JavaServerStatusResponse(StatusResponse):
+    """
+    Response data for an online Java Edition Minecraft server.
+
+    Extends StatusResponse with Java Edition-specific information including
+    version details, player information, MOTD, server mods/plugins, and more.
+
+    Attributes:
+        version: Server version information (name and protocol)
+        players: Player count and sample list
+        hostname: Server hostname
+        motd: Message of the day (raw, clean, and HTML formats)
+        icon: Base64-encoded server icon (if available)
+        mods: List of installed mods (if available)
+        software: Server software name (e.g., "Paper", "Spigot")
+        plugins: List of installed plugins (if available)
+        srv: SRV record information (if available)
+    """
+
+    version: JavaVersion
+    players: JavaPlayers
+    hostname: str
+    motd: MOTD
+    icon: Optional[str]
+    mods: list[JavaMods] | None
+    software: Optional[str]
+    plugins: list[JavaPlugins] | None
+    srv: JavaSRV | None
+
+
+class JavaServer:
+    """
+    Client for querying Java Edition Minecraft server status.
+
+    This class provides methods to retrieve status information from Java Edition
+    Minecraft servers via the mcstatus.io API. Both synchronous and asynchronous
+    methods are available.
+
+    Args:
+        hostname: Server hostname or IP address. Can include port as "hostname:port"
+        port: Server port (default: 25565, the standard Minecraft Java port)
+        timeout: Request timeout in seconds (default: 5)
+
+    Attributes:
+        hostname: The server hostname or IP address
+        port: The server port number
+        timeout: Request timeout in seconds
+
+    Example:
+        >>> server = JavaServer("mc.hypixel.net")
+        >>> status = server.status()
+        >>> print(f"Online: {status.online}")
+        >>> print(f"Players: {status.players.online}/{status.players.max}")
+
+        >>> # Using async
+        >>> import asyncio
+        >>> async def get_status():
+        ...     server = JavaServer("mc.hypixel.net")
+        ...     status = await server.async_status()
+        ...     return status
+        >>> asyncio.run(get_status())
+    """
+
+    def __init__(
+        self, hostname: str, port: int = 25565, timeout: int = DEFAULT_TIMEOUT
+    ):
+        self.hostname = hostname
+        self.port = port
+        self.timeout = timeout
+
+    def status(self) -> JavaServerStatusResponse | JavaServerStatusOffline:
+        """
+        Retrieve the server status synchronously.
+
+        Queries the mcstatus.io API to get the current status of the Java Edition
+        Minecraft server. If the hostname contains a port (e.g., "example.com:25566"),
+        it will be parsed and used instead of the default port.
+
+        Returns:
+            JavaServerStatusResponse if the server is online, containing detailed
+            server information including version, players, MOTD, mods, and plugins.
+            JavaServerStatusOffline if the server is offline, containing basic
+            information like hostname, port, and IP address.
+
+        Raises:
+            requests.exceptions.HTTPError: If the API request fails
+            requests.exceptions.Timeout: If the request times out
+            requests.exceptions.RequestException: For other request-related errors
+
+        Example:
+            >>> server = JavaServer("mc.hypixel.net")
+            >>> status = server.status()
+            >>> if status.online:
+            ...     print(f"Server is online with {status.players.online} players")
+            ... else:
+            ...     print("Server is offline")
+        """
+        # Split hostname and port if port is specified in hostname.
+
+        if ":" in self.hostname:
+            host_parts = self.hostname.split(":")
+            self.hostname = host_parts[0]
+            self.port = int(host_parts[1])
+
+        url = f"{BASE_URL}/status/java/{self.hostname}:{self.port}"
+        params = {"timeout": self.timeout}
+        response = requests.get(url, params=params, timeout=self.timeout)
+        response.raise_for_status()
+        data = response.json()
+
+        if data.get("online"):
+            return JavaServerStatusResponse(
+                online=data["online"],
+                ip_address=data["ip_address"],
+                eula_blocked=data.get("eula_blocked"),
+                retrieved_at=data.get("retrieved_at"),
+                expiries_at=data.get("expiries_at"),
+                port=data["port"],
+                version=JavaVersion(
+                    name=data["version"].get("name"),
+                    protocol=data["version"].get("protocol"),
+                ),
+                players=JavaPlayers(
+                    max=data["players"].get("max"),
+                    online=data["players"].get("online"),
+                    sample=data["players"].get("sample"),
+                ),
+                hostname=data.get("hostname"),
+                motd=MOTD(
+                    raw=data["motd"]["raw"],
+                    clean=data["motd"]["clean"],
+                    html=data["motd"]["html"],
+                ),
+                icon=data.get("icon"),
+                mods=data.get("mods"),
+                software=data.get("software"),
+                plugins=data.get("plugins"),
+                srv=data.get("srv"),
+            )
+        else:
+            return JavaServerStatusOffline(
+                online=data["online"],
+                hostname=data.get("hostname"),
+                port=data["port"],
+                ip_address=data.get("ip_address"),
+                eula_blocked=data.get("eula_blocked"),
+                retrieved_at=data.get("retrieved_at"),
+                expiries_at=data.get("expiries_at"),
+                srv=data.get("srv"),
+            )
+
+    async def async_status(self) -> JavaServerStatusResponse | JavaServerStatusOffline:
+        """
+        Retrieve the server status asynchronously.
+
+        Asynchronously queries the mcstatus.io API to get the current status of the
+        Java Edition Minecraft server. If the hostname contains a port (e.g.,
+        "example.com:25566"), it will be parsed and used instead of the default port.
+
+        Returns:
+            JavaServerStatusResponse if the server is online, containing detailed
+            server information including version, players, MOTD, mods, and plugins.
+            JavaServerStatusOffline if the server is offline, containing basic
+            information like hostname, port, and IP address.
+
+        Raises:
+            aiohttp.ClientError: If the API request fails
+            asyncio.TimeoutError: If the request times out
+            aiohttp.ClientResponseError: For HTTP error responses
+
+        Example:
+            >>> import asyncio
+            >>> async def check_server():
+            ...     server = JavaServer("mc.hypixel.net")
+            ...     status = await server.async_status()
+            ...     if status.online:
+            ...         print(f"Server is online with {status.players.online} players")
+            ...     else:
+            ...         print("Server is offline")
+            >>> asyncio.run(check_server())
+        """
+
+        # Split hostname and port if port is specified in hostname.
+        if ":" in self.hostname:
+            host_parts = self.hostname.split(":")
+            self.hostname = host_parts[0]
+            self.port = int(host_parts[1])
+
+        url = f"{BASE_URL}/status/java/{self.hostname}:{self.port}"
+        params = {"timeout": self.timeout}
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=self.timeout)
+        ) as session:
+            async with session.get(url, params=params) as response:
+                response.raise_for_status()
+                data = await response.json()
+
+                if data.get("online"):
+                    return JavaServerStatusResponse(
+                        online=data["online"],
+                        ip_address=data["ip_address"],
+                        eula_blocked=data.get("eula_blocked"),
+                        retrieved_at=data.get("retrieved_at"),
+                        expiries_at=data.get("expiries_at"),
+                        port=data["port"],
+                        version=JavaVersion(
+                            name=data["version"].get("name"),
+                            protocol=data["version"].get("protocol"),
+                        ),
+                        players=JavaPlayers(
+                            max=data["players"].get("max"),
+                            online=data["players"].get("online"),
+                            sample=data["players"].get("sample"),
+                        ),
+                        hostname=data.get("hostname"),
+                        motd=MOTD(
+                            raw=data["motd"]["raw"],
+                            clean=data["motd"]["clean"],
+                            html=data["motd"]["html"],
+                        ),
+                        icon=data.get("icon"),
+                        mods=data.get("mods"),
+                        software=data.get("software"),
+                        plugins=data.get("plugins"),
+                        srv=data.get("srv"),
+                    )
+                else:
+                    return JavaServerStatusOffline(
+                        online=data["online"],
+                        hostname=data.get("hostname"),
+                        port=data["port"],
+                        ip_address=data.get("ip_address"),
+                        eula_blocked=data.get("eula_blocked"),
+                        retrieved_at=data.get("retrieved_at"),
+                        expiries_at=data.get("expiries_at"),
+                        srv=data.get("srv"),
+                    )

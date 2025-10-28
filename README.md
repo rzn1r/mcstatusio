@@ -1,6 +1,9 @@
 # MCStatusio
 A Python wrapper for [mcstatus](httos://mcstatus.io/) API. 
 
+[![Tests](https://github.com/rzn1r/mcstatusio/actions/workflows/test.yml/badge.svg)](https://github.com/rzn1r/mcstatusio/actions/workflows/test.yml)
+
+
 ## Installation
 You can install the package via pip:
 ```bash

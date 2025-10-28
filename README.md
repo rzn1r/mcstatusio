@@ -4,7 +4,7 @@ A Python wrapper for [mcstatus](httos://mcstatus.io/) API.
 ## Installation
 You can install the package via pip:
 ```bash
-pip install ???
+pip install mcstatusio
 ```
 
 ## Usage

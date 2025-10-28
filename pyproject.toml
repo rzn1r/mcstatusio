@@ -1,6 +1,6 @@
 [project]
 name = "mcstatusio"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python wrapper for the mcstatus.io API."
 readme = "README.md"
 authors = [
@@ -19,3 +19,6 @@ dev = [
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
 ]
+
+[tool.uv.dependencies]
+ruff = "*"

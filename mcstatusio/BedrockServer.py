@@ -91,6 +91,9 @@ class BedrockServer:
         """
         Parse hostname and extract port if specified.
 
+        This method does not modify instance attributes. It extracts
+        hostname and port values for use in API requests.
+
         Returns:
             Tuple of (hostname, port)
         """

@@ -11,7 +11,6 @@ Constants:
 """
 
 from dataclasses import dataclass
-from typing import Literal
 
 BASE_URL = "https://api.mcstatus.io/v2"
 
@@ -174,48 +173,6 @@ class JavaSRV:
 
 
 @dataclass(frozen=True)
-class JavaServerStatus:
-    """
-    Complete status information for an online Java Edition server.
-
-    This is a legacy class. Use JavaServerStatusResponse instead.
-
-    Attributes:
-        online: Whether the server is online
-        hostname: Server hostname
-        ip_address: Server IP address
-        eula_blocked: Whether the server is EULA blocked
-        retrieved_at: Unix timestamp of retrieval
-        expiries_at: Unix timestamp of cache expiry
-        port: Server port
-        version: Server version information
-        players: Player count and sample
-        motd: Server message of the day
-        icon: Base64-encoded server icon
-        mods: List of installed mods
-        software: Server software name
-        plugins: List of installed plugins
-        srv: SRV record information
-    """
-
-    online: bool
-    hostname: str
-    ip_address: str
-    eula_blocked: bool | None
-    retrieved_at: int | None
-    expiries_at: int | None
-    port: int
-    version: JavaVersion
-    players: JavaPlayers
-    motd: MOTD
-    icon: str | None
-    mods: list[JavaMods] | None
-    software: str | None
-    plugins: list[JavaPlugins] | None
-    srv: JavaSRV | None
-
-
-@dataclass(frozen=True)
 class JavaServerStatusOffline:
     """
     Status information for an offline Java Edition server.
@@ -276,42 +233,6 @@ class BedrockPlayers:
 
 
 @dataclass(frozen=True)
-class BedrockServerStatus:
-    """
-    Complete status information for an online Bedrock Edition server.
-
-    This is a legacy class. Use BedrockServerStatusResponse instead.
-
-    Attributes:
-        online: Whether the server is online
-        ip_address: Server IP address
-        eula_blocked: Whether the server is EULA blocked
-        retrieved_at: Unix timestamp of retrieval
-        expiries_at: Unix timestamp of cache expiry
-        port: Server port
-        version: Server version information
-        players: Player count information
-        motd: Server message of the day
-        gamemode: Server gamemode (e.g., "Survival")
-        server_id: Unique server identifier
-        edition: Server edition ("MCPE" or "MCEE")
-    """
-
-    online: bool
-    ip_address: str | None
-    eula_blocked: bool
-    retrieved_at: int
-    expiries_at: int
-    port: int
-    version: BedrockVersion
-    players: BedrockPlayers
-    motd: MOTD
-    gamemode: str | None
-    server_id: str | None
-    edition: Literal["MCPE", "MCEE"] | None
-
-
-@dataclass(frozen=True)
 class BedrockServerStatusOffline:
     """
     Status information for an offline Bedrock Edition server.
@@ -342,16 +263,15 @@ __all__ = [
     "DEFAULT_TIMEOUT",
     "Player",
     "MOTD",
+    "StatusResponse",
     "JavaVersionName",
     "JavaMods",
     "JavaPlugins",
     "JavaVersion",
     "JavaPlayers",
     "JavaSRV",
-    "JavaServerStatus",
     "JavaServerStatusOffline",
     "BedrockVersion",
     "BedrockPlayers",
-    "BedrockServerStatus",
     "BedrockServerStatusOffline",
 ]

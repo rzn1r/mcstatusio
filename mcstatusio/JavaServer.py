@@ -96,46 +96,30 @@ class JavaServer:
         self.port = port
         self.timeout = timeout
 
-    def status(self) -> JavaServerStatusResponse | JavaServerStatusOffline:
+    def _parse_hostname(self) -> tuple[str, int]:
         """
-        Retrieve the server status synchronously.
-
-        Queries the mcstatus.io API to get the current status of the Java Edition
-        Minecraft server. If the hostname contains a port (e.g., "example.com:25566"),
-        it will be parsed and used instead of the default port.
+        Parse hostname and extract port if specified.
 
         Returns:
-            JavaServerStatusResponse if the server is online, containing detailed
-            server information including version, players, MOTD, mods, and plugins.
-            JavaServerStatusOffline if the server is offline, containing basic
-            information like hostname, port, and IP address.
-
-        Raises:
-            requests.exceptions.HTTPError: If the API request fails
-            requests.exceptions.Timeout: If the request times out
-            requests.exceptions.RequestException: For other request-related errors
-
-        Example:
-            >>> server = JavaServer("mc.hypixel.net")
-            >>> status = server.status()
-            >>> if status.online:
-            ...     print(f"Server is online with {status.players.online} players")
-            ... else:
-            ...     print("Server is offline")
+            Tuple of (hostname, port)
         """
-        # Split hostname and port if port is specified in hostname.
-
         if ":" in self.hostname:
             host_parts = self.hostname.split(":")
-            self.hostname = host_parts[0]
-            self.port = int(host_parts[1])
+            return host_parts[0], int(host_parts[1])
+        return self.hostname, self.port
 
-        url = f"{BASE_URL}/status/java/{self.hostname}:{self.port}"
-        params = {"timeout": self.timeout}
-        response = requests.get(url, params=params, timeout=self.timeout)
-        response.raise_for_status()
-        data = response.json()
+    def _build_response(
+        self, data: dict
+    ) -> JavaServerStatusResponse | JavaServerStatusOffline:
+        """
+        Build response object from API data.
 
+        Args:
+            data: Raw JSON response from the API
+
+        Returns:
+            JavaServerStatusResponse if server is online, otherwise JavaServerStatusOffline
+        """
         if data.get("online"):
             return JavaServerStatusResponse(
                 online=data["online"],
@@ -181,6 +165,41 @@ class JavaServer:
                 srv=data.get("srv"),
             )
 
+    def status(self) -> JavaServerStatusResponse | JavaServerStatusOffline:
+        """
+        Retrieve the server status synchronously.
+
+        Queries the mcstatus.io API to get the current status of the Java Edition
+        Minecraft server. If the hostname contains a port (e.g., "example.com:25566"),
+        it will be parsed and used instead of the default port.
+
+        Returns:
+            JavaServerStatusResponse if the server is online, containing detailed
+            server information including version, players, MOTD, mods, and plugins.
+            JavaServerStatusOffline if the server is offline, containing basic
+            information like hostname, port, and IP address.
+
+        Raises:
+            requests.exceptions.HTTPError: If the API request fails
+            requests.exceptions.Timeout: If the request times out
+            requests.exceptions.RequestException: For other request-related errors
+
+        Example:
+            >>> server = JavaServer("mc.hypixel.net")
+            >>> status = server.status()
+            >>> if status.online:
+            ...     print(f"Server is online with {status.players.online} players")
+            ... else:
+            ...     print("Server is offline")
+        """
+        hostname, port = self._parse_hostname()
+        url = f"{BASE_URL}/status/java/{hostname}:{port}"
+        params = {"timeout": self.timeout}
+        response = requests.get(url, params=params, timeout=self.timeout)
+        response.raise_for_status()
+        data = response.json()
+        return self._build_response(data)
+
     async def async_status(self) -> JavaServerStatusResponse | JavaServerStatusOffline:
         """
         Retrieve the server status asynchronously.
@@ -211,14 +230,8 @@ class JavaServer:
             ...         print("Server is offline")
             >>> asyncio.run(check_server())
         """
-
-        # Split hostname and port if port is specified in hostname.
-        if ":" in self.hostname:
-            host_parts = self.hostname.split(":")
-            self.hostname = host_parts[0]
-            self.port = int(host_parts[1])
-
-        url = f"{BASE_URL}/status/java/{self.hostname}:{self.port}"
+        hostname, port = self._parse_hostname()
+        url = f"{BASE_URL}/status/java/{hostname}:{port}"
         params = {"timeout": self.timeout}
         async with aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=self.timeout)
@@ -226,48 +239,4 @@ class JavaServer:
             async with session.get(url, params=params) as response:
                 response.raise_for_status()
                 data = await response.json()
-
-                if data.get("online"):
-                    return JavaServerStatusResponse(
-                        online=data["online"],
-                        ip_address=data["ip_address"],
-                        eula_blocked=data.get("eula_blocked"),
-                        retrieved_at=data.get("retrieved_at"),
-                        expiries_at=data.get("expiries_at"),
-                        port=data["port"],
-                        version=JavaVersion(
-                            name=JavaVersionName(
-                                raw=data["version"].get("name_raw"),
-                                clean=data["version"].get("name_clean"),
-                                html=data["version"].get("name_html"),
-                                ),
-                            protocol=data["version"].get("protocol"),
-                        ),
-                        players=JavaPlayers(
-                            max=data["players"].get("max"),
-                            online=data["players"].get("online"),
-                            sample=data["players"].get("sample"),
-                        ),
-                        hostname=data.get("hostname"),
-                        motd=MOTD(
-                            raw=data["motd"]["raw"],
-                            clean=data["motd"]["clean"],
-                            html=data["motd"]["html"],
-                        ),
-                        icon=data.get("icon"),
-                        mods=data.get("mods"),
-                        software=data.get("software"),
-                        plugins=data.get("plugins"),
-                        srv=data.get("srv"),
-                    )
-                else:
-                    return JavaServerStatusOffline(
-                        online=data["online"],
-                        hostname=data.get("hostname"),
-                        port=data["port"],
-                        ip_address=data.get("ip_address"),
-                        eula_blocked=data.get("eula_blocked"),
-                        retrieved_at=data.get("retrieved_at"),
-                        expiries_at=data.get("expiries_at"),
-                        srv=data.get("srv"),
-                    )
+                return self._build_response(data)

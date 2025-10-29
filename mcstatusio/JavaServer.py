@@ -17,6 +17,7 @@ from .constants import (
     StatusResponse,
     JavaServerStatusOffline,
     JavaVersion,
+    JavaVersionName,
     MOTD,
     JavaMods,
     JavaPlugins,
@@ -144,7 +145,11 @@ class JavaServer:
                 expiries_at=data.get("expiries_at"),
                 port=data["port"],
                 version=JavaVersion(
-                    name=data["version"].get("name"),
+                    name=JavaVersionName(
+                        raw=data["version"].get("name_raw"),
+                        clean=data["version"].get("name_clean"),
+                        html=data["version"].get("name_html"),
+                    ),
                     protocol=data["version"].get("protocol"),
                 ),
                 players=JavaPlayers(
@@ -231,7 +236,11 @@ class JavaServer:
                         expiries_at=data.get("expiries_at"),
                         port=data["port"],
                         version=JavaVersion(
-                            name=data["version"].get("name"),
+                            name=JavaVersionName(
+                                raw=data["version"].get("name_raw"),
+                                clean=data["version"].get("name_clean"),
+                                html=data["version"].get("name_html"),
+                                ),
                             protocol=data["version"].get("protocol"),
                         ),
                         players=JavaPlayers(

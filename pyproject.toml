@@ -1,6 +1,6 @@
 [project]
 name = "mcstatusio"
-version = "0.1.1"
+version = "1.0.0"
 description = "A Python wrapper for the mcstatus.io API."
 readme = "README.md"
 authors = [
@@ -12,6 +12,20 @@ dependencies = [
     "aiohttp>=3.13.1",
     "requests>=2.32.5",
 ]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+"Homepage" = "https://githuv.com/rzn1r/mcstatusio"
+"Repository" = "https://githuv.com/rzn1r/mcstatusio"
+"Issues" = "https://githuv.com/rzn1r/mcstatusio/issues"
+"Documentation" = "https://mcstatusio.readthedocs.io/"
 
 [dependency-groups]
 dev = [

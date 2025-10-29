@@ -5,7 +5,7 @@ To install ``mcstatusio``, follow the steps below:
 
 1. **Prerequisites**:
 
-   - Ensure you have Python 3.12 or higher installed on your system.
+   - Ensure you have Python 3.11 or higher installed on your system.
    - Make sure you have ``pip`` installed for managing Python packages.
 
 2. **Install mcstatusio**:

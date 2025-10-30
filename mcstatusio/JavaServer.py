@@ -7,6 +7,7 @@ requests.
 """
 
 import requests
+import asyncio
 import aiohttp
 from dataclasses import dataclass
 from typing import Optional
@@ -24,6 +25,11 @@ from .constants import (
     JavaSRV,
 )
 
+from .exceptions import (
+    McstatusioConnectionError,
+    McstatusioHTTPError,
+    McstatusioTimeoutError,
+)
 
 @dataclass(frozen=True)
 class JavaServerStatusResponse(StatusResponse):
@@ -198,9 +204,18 @@ class JavaServer:
         hostname, port = self._parse_hostname()
         url = f"{BASE_URL}/status/java/{hostname}:{port}"
         params = {"timeout": self.timeout}
-        response = requests.get(url, params=params, timeout=self.timeout)
-        response.raise_for_status()
-        data = response.json()
+        try:
+            response = requests.get(url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+            data = response.json()
+        except requests.exceptions.Timeout as e:
+            raise McstatusioTimeoutError("Request timed out") from e
+        except requests.exceptions.ConnectionError as e:
+            raise McstatusioConnectionError("Connection error occurred") from e
+        except requests.exceptions.HTTPError as e:
+            raise McstatusioHTTPError(
+                f"HTTP error occurred: {e.response.status_code}"
+            ) from e
         return self._build_response(data)
 
     async def async_status(self) -> JavaServerStatusResponse | JavaServerStatusOffline:
@@ -236,10 +251,19 @@ class JavaServer:
         hostname, port = self._parse_hostname()
         url = f"{BASE_URL}/status/java/{hostname}:{port}"
         params = {"timeout": self.timeout}
-        async with aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=self.timeout)
-        ) as session:
-            async with session.get(url, params=params) as response:
-                response.raise_for_status()
-                data = await response.json()
-                return self._build_response(data)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url, params=params, timeout=self.timeout
+                ) as response:
+                    response.raise_for_status()
+                    data = await response.json()
+        except asyncio.TimeoutError as e:
+            raise McstatusioTimeoutError("Request timed out") from e
+        except aiohttp.ClientConnectionError as e:
+            raise McstatusioConnectionError("Connection error occurred") from e
+        except aiohttp.ClientResponseError as e:
+            raise McstatusioHTTPError(
+                f"HTTP error occurred: {e.status}"
+            ) from e
+        return self._build_response(data)
